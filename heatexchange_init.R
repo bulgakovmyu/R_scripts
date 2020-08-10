@@ -1,16 +1,17 @@
 source("heatexchange_func.R")
-# Входные данные
 
-create_input <- function(t11, t12, t21, t22){
-  out <- list(t11=t11, t12=t12, t21=t21, t22=t22)
-  
+# Функция инициализации входных данных.
+
+create_input <- function(mf=5){
+  arr  <- load_input_data(mf=mf)
+  out <- list(t11=arr[[1]], t12=arr[[2]], t21=arr[[3]], t22=arr[[4]])
   
   class(out) <- "input_data"
   
   return(out)
 }
 
-# Выходные данные
+# Функция инициализации выходных данных
 
 create_output <- function(KPD=0, LMTD=0, CLMTD=0, KF=0, KF2=0, KF0=0, FF=0,
                           MES_STATE=0, EFF_STATE=0, OFF_STATE=0, 
@@ -24,7 +25,7 @@ create_output <- function(KPD=0, LMTD=0, CLMTD=0, KF=0, KF2=0, KF0=0, FF=0,
   return(out)
 }
 
-# Теплообменник
+# Функция инициализиации начальных свойств теплообменника и алгоритма.
 init_heatexchanger <- function(f0, shell_num=0, mf=5, 
                                T1_THD_A=1e6, T1_THD_W=1e6, T2_THD_A=1e6, T2_THD_W=1e6, 
                                DT_THD_A=1e6, DT_THD_W=1e6, LMTD_THD_A=1e6, LMTD_THD_W=1e6){

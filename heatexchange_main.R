@@ -1,25 +1,18 @@
 source("heatexchange_init.R")
-
-pi_t <- create_input(t11=150, t12=200, t21=130, t22=320)
-
-pi_output <- create_output()
-
-m_index = 0
-m_count = 0 
-mf = 11
-
-if (mf > 3600){
-  mf <- 3600
-}
-
-t11_array = rep(0.0, mf)
-t12_array = rep(0.0, mf)
-t21_array = rep(0.0, mf)
-t22_array = rep(0.0, mf)
-sort_array = rep(0.0, mf)
-
+# Инициализируем начальные свойства
 HeatExchanger_props <- init_heatexchanger(0)
 
+# Инициализируем и загружаем входные данные
+arrays = create_input(mf=HeatExchanger_props$mf)
 
-GetMedVal(c(1,2,3,4,5,6,7,8,9,10,11), 0, 11, 300)
+# Инициализируем выходные данные
+pi_output <- create_output()
+
+#Запускаем расчеты
+pi_output <- CalcState(arrays, pi_output)
+
+
+
+
+
 
