@@ -11,19 +11,6 @@ create_input <- function(mf=5){
   return(out)
 }
 
-# Функция инициализации выходных данных
-
-create_output <- function(KPD=0, LMTD=0, CLMTD=0, KF=0, KF2=0, KF0=0, FF=0,
-                          MES_STATE=0, EFF_STATE=0, OFF_STATE=0, 
-                          T_STATE=0, DT_STATE=0, FOL_STATE=0){
-  out <- list(KPD=KPD, LMTD=LMTD, CLMTD=CLMTD, KF=KF, KF2=KF2, KF0=KF0, FF=FF,
-              MES_STATE=MES_STATE, EFF_STATE=EFF_STATE, OFF_STATE=OFF_STATE, 
-              T_STATE=T_STATE, DT_STATE=DT_STATE, FOL_STATE=FOL_STATE)
-  
-  class(out) <- "output_data"
-  
-  return(out)
-}
 
 # Функция инициализиации начальных свойств теплообменника и алгоритма.
 init_heatexchanger <- function(f0, shell_num=0, mf=5, 
@@ -34,6 +21,16 @@ init_heatexchanger <- function(f0, shell_num=0, mf=5,
               DT_THD_A=DT_THD_A, DT_THD_W=DT_THD_W, LMTD_THD_A=LMTD_THD_A, LMTD_THD_W=LMTD_THD_W)
   
   class(out) <- "exchanger_props"
+  
+  return(out)
+  
+}
+
+# Функция инициализиации начальных свойств теплообменника и алгоритма.
+init_status_values <- function(ST_BAD, ST_NORM, ST_WARN, ST_ALARM){
+  out <- list(ST_BAD=ST_BAD, ST_NORM=ST_NORM, ST_WARN=ST_WARN, ST_ALARM=ST_ALARM)
+  
+  class(out) <- "status_values"
   
   return(out)
   
