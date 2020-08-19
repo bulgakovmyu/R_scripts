@@ -11,7 +11,6 @@ is_valid_T <- function(t){
 # Загрузка данных и медианная фильтрация
 load_input_data <- function(mf=5){
   df_input <- read.csv("input_test_data.csv", header = TRUE, sep=";",dec = ",")
-  
   if (mf > 3600){
     mf <- 3600
   }
@@ -57,48 +56,44 @@ GetMedVal <- function(t_array, mf, def_val){
 
 # Функция инициализации выходных данных
 
-create_output <- function(KPD=0, LMTD=0, CLMTD=0, KF=0, KF2=0, KF0=0, FF=0,
+create_pi_output <- function(KPD=0, LMTD=0, CLMTD=0, KF=0, KF2=0, KF0=0, FF=0,
                           MES_STATE=0, EFF_STATE=0, OFF_STATE=0, 
                           T_STATE=0, DT_STATE=0, FOL_STATE=0){
-  out <- list(KPD=KPD, LMTD=LMTD, CLMTD=CLMTD, KF=KF, KF2=KF2, KF0=KF0, FF=FF,
+  out <- data.frame(KPD=KPD, LMTD=LMTD, CLMTD=CLMTD, KF=KF, KF2=KF2, KF0=KF0, FF=FF,
               MES_STATE=MES_STATE, EFF_STATE=EFF_STATE, OFF_STATE=OFF_STATE, 
               T_STATE=T_STATE, DT_STATE=DT_STATE, FOL_STATE=FOL_STATE)
-  
-  class(out) <- "output_data"
   
   return(out)
 }
 
 
 # Вычисляем состояние теплообменника
-CalcState <- function(input, status_values, HeatExchanger_props){
+CalcState <- function(input, output, i, status_values, HeatExchanger_props){
   t11 <- input[[1]]
   t12 <- input[[2]]
   t21 <- input[[3]]
   t22 <- input[[4]]
-  
-  # Инициализируем выходные данные
-  output <- create_output()
+
   
   # проверяем корректные ли данные поданы на вход функции
   if (!is_valid_T(t11) | !is_valid_T(t12) | !is_valid_T(t21) | !is_valid_T(t22)){
-    output$MES_STATE <- 1
-    output$EFF_STATE <- status_values$ST_BAD
-    output$OFF_STATE <- status_values$ST_BAD
-    output$T_STATE <- status_values$ST_BAD
-    output$DT_STATE <- status_values$ST_BAD
-    output$FOL_STATE <- status_values$ST_BAD
+    output$MES_STATE[i] <- 1
+    output$EFF_STATE[i] <- status_values$ST_BAD
+    output$OFF_STATE[i] <- status_values$ST_BAD
+    output$T_STATE[i] <- status_values$ST_BAD
+    output$DT_STATE[i] <- status_values$ST_BAD
+    output$FOL_STATE[i] <- status_values$ST_BAD
     
-    output$KPD <- status_values$ST_BAD
-    output$LMTD <- status_values$ST_BAD
-    output$CLMTD <- status_values$ST_BAD
-    output$KF <- status_values$ST_BAD
-    output$KF2 <- status_values$ST_BAD
-    output$KF0 <- status_values$ST_BAD
-    output$FF <- status_values$ST_BAD
+    output$KPD[i] <- status_values$ST_BAD
+    output$LMTD[i] <- status_values$ST_BAD
+    output$CLMTD[i] <- status_values$ST_BAD
+    output$KF[i] <- status_values$ST_BAD
+    output$KF2[i] <- status_values$ST_BAD
+    output$KF0[i] <- status_values$ST_BAD
+    output$FF[i] <- status_values$ST_BAD
     
   } else {
-    output$MES_STATE <- 0
+    output$MES_STATE[i] <- 0
     
     # Вычисляем первую часть параметров обменника
     dt1 <- t11 - t12
@@ -109,68 +104,68 @@ CalcState <- function(input, status_values, HeatExchanger_props){
     
     # Делаем промежуточную проверку значений
     if ((t11 >= HeatExchanger_props$T1_THD_A) | (t21 >= HeatExchanger_props$T1_THD_A)){
-      output$T_STATE <- 2
+      output$T_STATE[i] <- 2
     } else if ((t11 >= HeatExchanger_props$T1_THD_W) | (t21 >= HeatExchanger_props$T1_THD_W)) {
-      output$T_STATE <- 1
+      output$T_STATE[i] <- 1
     } else {
-      output$T_STATE <- 0
+      output$T_STATE[i] <- 0
     }
     
     if ((dt1 >= HeatExchanger_props$DT_THD_A) | (dt2 >= HeatExchanger_props$DT_THD_A) | (LMTD >= HeatExchanger_props$LMTD_THD_A)){
-      output$DT_STATE <- 2
+      output$DT_STATE[i] <- 2
     } else if ((dt1 >= HeatExchanger_props$DT_THD_W) | (dt2 >= HeatExchanger_props$DT_THD_W) | (LMTD >= HeatExchanger_props$LMTD_THD_W)){
-      output$DT_STATE <- 1
+      output$DT_STATE[i] <- 1
     } else {
-      output$DT_STATE <- 0
+      output$DT_STATE[i] <- 0
     }
     
     if ((t11 - t21) < 10.0){
       # Теплообменник не работает. Дальнейшие вычисления недостоверны
-      output$OFF_STATE <- 1
+      output$OFF_STATE[i] <- 1
       return(output)
       
     } else {
-      output$OFF_STATE <- 0
+      output$OFF_STATE[i] <- 0
     }
     
     #Присваиваем значение КПД
-    output$KPD <- KPD
+    output$KPD[i] <- KPD
     
     #Проверяем эффективность теплообменника
     if (KPD <= 0.1){
       #  Низкая эффективност. Дальнейшие вычисления недостоверны
-      output$EFF_STATE <- 3
+      output$EFF_STATE[i] <- 3
       return(output)
     }
     
     if ((t11 - t12) < 5.0){
       # Перерасход теплоносителя по потоку 1. Низкая эффективность. Дальнейшие вычисления недостоверны.
-      output$EFF_STATE <- 1
+      output$EFF_STATE[i] <- 1
       return(output)
     }
     
     if ((t22 - t21) < 5.0){
       # Перерасход теплоносителя по потоку 2. Низкая эффективность. Дальнейшие вычисления недостоверны.
-      output$EFF_STATE <- 2
+      output$EFF_STATE[i] <- 2
       return(output)
     }
     
     #Присваиваем значение LMTD
-    output$LMTD <- LMTD
+    output$LMTD[i] <- LMTD
     
     #Продолжаем проверку эффективности обменника
     if (LMTD < 10.0){
       #  Низкая эффективность. Дальнейшие вычисления недостоверны.
-      output$EFF_STATE <- 3
+      output$EFF_STATE[i] <- 3
       return(output)
     }
     
     #Присваиваем начальное значение коэффициента Ф
     KF0 <- HeatExchanger_props$f0
-    output$KF0 <- KF0
+    output$KF0[i] <- KF0
     
     KF <- sqrt(dt1*dt2) / LMTD
-    output$KF <- KF
+    output$KF[i] <- KF
     
     if ((HeatExchanger_props$shell_num > 0) & (HeatExchanger_props$shell_num < 10)){
       r <- dt2/dt1
@@ -183,11 +178,11 @@ CalcState <- function(input, status_values, HeatExchanger_props){
 
       if (!is_normal_T(f)){
         # Низкая эффективность. Дальнейшие вычисление не достоверны
-        output$EFF_STATE <- 4
+        output$EFF_STATE[i] <- 4
         
-        output$CLMTD <- status_values$ST_BAD
-        output$KF <- status_values$ST_BAD
-        output$KF2 <- status_values$ST_BAD
+        output$CLMTD[i] <- status_values$ST_BAD
+        output$KF[i] <- status_values$ST_BAD
+        output$KF2[i] <- status_values$ST_BAD
         return(output)
         
       } else {
@@ -199,16 +194,16 @@ CalcState <- function(input, status_values, HeatExchanger_props){
     }
     
     # C эффективностью все в порядке
-    output$EFF_STATE <- 0
+    output$EFF_STATE[i] <- 0
     
     #Присваиваем CLMTD, KF2 и FF
     CLMTD <- LMTD*corr_f
-    output$CLMTD <- CLMTD
+    output$CLMTD[i] <- CLMTD
     
     KF2 <- KF/corr_f
     FF <- 1 - KF2/KF0
-    output$KF2 <- KF2
-    output$FF <- FF
+    output$KF2[i] <- KF2
+    output$FF[i] <- FF
     
     # Присваиваем статус FOL_STATE
     if (FF < 0.1){
@@ -219,7 +214,7 @@ CalcState <- function(input, status_values, HeatExchanger_props){
       STATE = status_values$ST_ALARM
     }
     
-    output$FOL_STATE <- STATE
+    output$FOL_STATE[i] <- STATE
    
     
     return(output)
